@@ -32,7 +32,7 @@ targets:
         INFOPLIST_FILE: SimpleMapper/Info.plist
         INFOPLIST_KEY_LSUIElement: YES
         INFOPLIST_KEY_CFBundleDisplayName: SimpleMapper
-        INFOPLIST_KEY_NSHumanReadableCopyright: "© 2026 Anh-Thi Dinh"
+        INFOPLIST_KEY_NSHumanReadableCopyright: "© 2026 Coprimal"
         SWIFT_VERSION: "5.0"
         # Debug is Developer ID-signed too, so Debug and Release share one Input Monitoring grant.
         CODE_SIGN_STYLE: Manual

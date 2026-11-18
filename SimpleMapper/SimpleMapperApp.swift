@@ -177,10 +177,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         paragraph.alignment = .center
         paragraph.paragraphSpacing = 6
         let font = NSFont.systemFont(ofSize: NSFont.smallSystemFontSize)
-        let url = "https://github.com/dinhanhthi/SimpleMapper"
-        let credits = NSMutableAttributedString(string: "A lightweight key remapper for macOS.\n\(url)\nMIT License",
+        let url = "https://github.com/Coprimal/SimpleMapper"
+        let credits = NSMutableAttributedString(string: "A lightweight key remapper for macOS.\nMade by Coprimal\n\(url)\nMIT License",
                                                 attributes: [.font: font, .paragraphStyle: paragraph])
         credits.addAttribute(.link, value: url, range: (credits.string as NSString).range(of: url))
+        credits.addAttribute(.link, value: "https://coprimal.dev", range: (credits.string as NSString).range(of: "Coprimal"))
         // Queued after bringToFront's activation.
         DispatchQueue.main.async {
             NSApp.orderFrontStandardAboutPanel(options: [

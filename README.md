@@ -6,7 +6,7 @@
 
 A lightweight key remapper for macOS, a simple alternative to Karabiner-Elements.
 
-[![Download](https://img.shields.io/badge/Download-macOS-black?style=for-the-badge&logo=apple)](https://github.com/dinhanhthi/SimpleMapper/releases/latest)
+[![Download](https://img.shields.io/badge/Download-macOS-black?style=for-the-badge&logo=apple)](https://github.com/Coprimal/SimpleMapper/releases/latest)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)](LICENSE)
 
 <picture>
@@ -27,7 +27,7 @@ A lightweight key remapper for macOS, a simple alternative to Karabiner-Elements
 
 ## Install
 
-Download the `.dmg` from [Releases](https://github.com/dinhanhthi/SimpleMapper/releases/latest), drag SimpleMapper to `/Applications` and launch it. Requires macOS 14 or later; updates come through Sparkle.
+Download the `.dmg` from [Releases](https://github.com/Coprimal/SimpleMapper/releases/latest), drag SimpleMapper to `/Applications` and launch it. Requires macOS 14 or later; updates come through Sparkle.
 
 ## How it works
 
@@ -90,4 +90,4 @@ Issues and pull requests are welcome, see [CONTRIBUTING.md](CONTRIBUTING.md). Re
 
 ## License
 
-MIT, see [LICENSE](LICENSE).
+MIT © [Coprimal](https://coprimal.dev), see [LICENSE](LICENSE).
