@@ -41,6 +41,10 @@ if git rev-parse -q --verify "refs/tags/$TAG" >/dev/null \
   exit 1
 fi
 
+# Builds <= 1.1.4 read the old-feed mirror; publish-appcast.sh updates it. Check access before the build.
+[[ "$(gh api repos/dinhanhthi/dinhanhthi.github.io --jq .permissions.push 2>/dev/null)" == "true" ]] \
+  || { echo "error: cannot push to dinhanhthi/dinhanhthi.github.io (old-feed mirror, see scripts/sync-feed-mirror.sh)" >&2; exit 1; }
+
 ZIP="release/export/SimpleMapper-$VERSION.zip"
 
 echo "========================================"
@@ -68,6 +72,6 @@ scripts/publish-appcast.sh "$ZIP"
 echo
 echo "========================================"
 echo "  SimpleMapper v$VERSION shipped!"
-echo "  GitHub : https://github.com/dinhanhthi/SimpleMapper/releases/tag/v$VERSION"
-echo "  Appcast: https://dinhanhthi.github.io/SimpleMapper/appcast.xml (live in ~1 min)"
+echo "  GitHub : https://github.com/Coprimal/SimpleMapper/releases/tag/v$VERSION"
+echo "  Appcast: https://simplemapper.coprimal.dev/appcast.xml (live in ~1 min)"
 echo "========================================"

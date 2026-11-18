@@ -24,7 +24,7 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 CHANGELOG="$REPO_ROOT/CHANGELOG.md"
-GH_REPO="dinhanhthi/SimpleMapper"
+GH_REPO="Coprimal/SimpleMapper"
 
 # --- 0. Args & tools -------------------------------------------------------
 YES=false

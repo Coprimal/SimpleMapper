@@ -6,7 +6,9 @@
 # release/appcast-archives/ that holds only the new zip plus a copy of the repo-root
 # appcast.xml (so older items keep their original download URLs, and the history
 # survives a deleted release/ folder), copies the result back to the repo root,
-# commits, and pushes to main (the Pages workflow then deploys it).
+# commits, and pushes to main (the Pages workflow then deploys it to
+# https://simplemapper.coprimal.dev/appcast.xml). It then copies the appcast to the
+# old-feed mirror that builds <= 1.1.4 read (scripts/sync-feed-mirror.sh).
 #
 # The zip must already be notarized + stapled (build-and-notarize.sh) and the GitHub
 # Release must exist (publish-release.sh), since the appcast points at its asset URL.
@@ -22,7 +24,8 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-GH_REPO="dinhanhthi/SimpleMapper"
+GH_REPO="Coprimal/SimpleMapper"
+MIRROR_REPO="dinhanhthi/dinhanhthi.github.io"
 ARCHIVES="release/appcast-archives"
 
 ZIP="${1:-}"
@@ -46,6 +49,10 @@ fi
 BRANCH="$(git rev-parse --abbrev-ref HEAD)"
 [[ "$BRANCH" == "main" ]] \
   || { echo "error: the appcast must be committed on 'main' (you are on '$BRANCH')." >&2; exit 1; }
+
+# Builds <= 1.1.4 read the old-feed mirror: check push access before publishing anything.
+[[ "$(gh api "repos/$MIRROR_REPO" --jq .permissions.push 2>/dev/null)" == "true" ]] \
+  || { echo "error: cannot push to $MIRROR_REPO (old-feed mirror, see scripts/sync-feed-mirror.sh)." >&2; exit 1; }
 
 # generate_appcast ships inside the Sparkle SPM binary artifact.
 G="$(find ~/Library/Developer/Xcode/DerivedData/SimpleMapper-*/SourcePackages/artifacts \
@@ -80,6 +87,13 @@ git add appcast.xml
 git commit -m "chore(release): appcast v$VERSION" -- appcast.xml
 git push origin main
 
+echo "==> Syncing the old-feed mirror"
+scripts/sync-feed-mirror.sh appcast.xml || {
+  echo "error: appcast.xml is pushed but the old-feed mirror sync failed; rerun: scripts/sync-feed-mirror.sh appcast.xml" >&2
+  exit 1
+}
+
 echo
 echo "Done. appcast.xml pushed — Pages deploy triggered (~1 min to go live)."
-echo "  Verify: curl -fsSL https://dinhanhthi.github.io/SimpleMapper/appcast.xml | grep shortVersionString"
+echo "  Verify: curl -fsSL https://simplemapper.coprimal.dev/appcast.xml | grep shortVersionString"
+echo "          curl -fsSL https://dinhanhthi.github.io/SimpleMapper/appcast.xml | grep shortVersionString"

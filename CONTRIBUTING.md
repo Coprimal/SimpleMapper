@@ -97,6 +97,13 @@ Never pass `-derivedDataPath` to local `xcodebuild` builds and tests. The defaul
    test "$(grep -c '^| `' docs/KEYS.md)" = "$(grep -c 'Key(' SimpleMapper/KeyCatalog.swift)"
    ```
 
+## Update feed
+
+- **Feed:** `SUFeedURL` (since 1.1.5) is `https://simplemapper.coprimal.dev/appcast.xml`, served by GitHub Pages from `.github/workflows/pages.yml`, which publishes the root `appcast.xml` on every push to `main` that changes it. Settings > Pages > Source must stay "GitHub Actions", with the custom domain `simplemapper.coprimal.dev` and Enforce HTTPS. Cloudflare DNS (zone `coprimal.dev`) has a CNAME `simplemapper` → `coprimal.github.io`, DNS only.
+- **Old address:** the repo moved from `dinhanhthi/SimpleMapper` to `Coprimal/SimpleMapper` in November 2026 (1.1.5). Builds <= 1.1.4 read `https://dinhanhthi.github.io/SimpleMapper/appcast.xml`, which GitHub does not redirect after a transfer. The user site `dinhanhthi/dinhanhthi.github.io` serves a copy at `SimpleMapper/appcast.xml`; `scripts/publish-appcast.sh` updates it on every release through `scripts/sync-feed-mirror.sh` (rerun that script by hand if it failed). Never edit the copy by hand.
+- **Never:** delete the mirror repo or give its site a custom domain, create or fork a repo named `dinhanhthi/SimpleMapper` (it breaks GitHub's redirects to this repo), change the Pages source, or remove the custom domain or its DNS record.
+- **Feed check:** `curl -sI https://simplemapper.coprimal.dev/appcast.xml` answers 200, `curl -s https://simplemapper.coprimal.dev/appcast.xml | cmp - appcast.xml` and `curl -sL https://dinhanhthi.github.io/SimpleMapper/appcast.xml | cmp - appcast.xml` print nothing.
+
 ## Commit style
 
 One-line conventional commits: `<type>(<scope>): <summary>`, for example `fix(remapper): clear the previous keyboard mapping`. Types: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`. No body.

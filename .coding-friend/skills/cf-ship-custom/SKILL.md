@@ -7,8 +7,12 @@ user's own messages direct the flow.
 
 This is a **version bump + changelog + ship** workflow for SimpleMapper. The release runs
 **entirely on this machine**: XcodeGen → archive → Developer ID sign →
-notarize → zip + DMG → GitHub Release → Sparkle appcast → GitHub Pages. There is no CI release
-workflow; the only workflow is `deploy-pages.yml`, which publishes `appcast.xml` to Pages.
+notarize → zip + DMG → GitHub Release → Sparkle appcast → GitHub Pages
+(`https://simplemapper.coprimal.dev/appcast.xml`) + the old-feed mirror. There is no CI release
+workflow; the only workflow is `pages.yml`, which publishes `appcast.xml` to Pages. Builds <= 1.1.4
+read `https://dinhanhthi.github.io/SimpleMapper/appcast.xml`, a copy in the repo
+`dinhanhthi/dinhanhthi.github.io` that `scripts/sync-feed-mirror.sh` updates (CONTRIBUTING.md
+"Update feed").
 
 This **Before** section handles prep (commits → version → changelog → file updates). The
 **After** section runs the actual local release.
@@ -47,9 +51,10 @@ G=$(find ~/Library/Developer/Xcode/DerivedData/SimpleMapper-*/SourcePackages/art
 # 4. Notary profile
 xcrun notarytool history --keychain-profile "${SIMPLEMAPPER_NOTARY_PROFILE:-simplemapper-notary}"
 
-# 5. GitHub CLI and Pages source
+# 5. GitHub CLI, Pages source, old-feed mirror push access
 gh auth status
-gh api repos/dinhanhthi/SimpleMapper/pages --jq .build_type
+gh api repos/Coprimal/SimpleMapper/pages --jq .build_type
+gh api repos/dinhanhthi/dinhanhthi.github.io --jq .permissions.push
 ```
 
 - Check 1, branch: not on `main` → stop ("switch to main: `git switch main`"). Never switch
@@ -76,9 +81,14 @@ gh api repos/dinhanhthi/SimpleMapper/pages --jq .build_type
   agent commands, so an override must be on the same command line as every script call that
   uses it, e.g. `SIMPLEMAPPER_NOTARY_PROFILE=<name> scripts/ship.sh` (a separate `export` is
   lost). Check such a profile with `xcrun notarytool history --keychain-profile <name>`.
-- Check 5: the Pages check must print `workflow` (Settings > Pages > Source = GitHub Actions).
+- Check 5: the Pages check must print `workflow` (Settings > Pages > Source = GitHub Actions), and
+  the mirror check must print `true`.
 
 ### Resume (check right after B0)
+
+First, always run `scripts/sync-feed-mirror.sh appcast.xml` (idempotent: it does nothing when the
+mirror is current). A previous run may have pushed the appcast and then failed to sync the mirror;
+this repairs it even when the rest of Resume finds nothing to do. A failure here is a stop.
 
 `X.Y.Z` is `MARKETING_VERSION` in `project.yml` at `HEAD`. Decide from the **remote** state
 (`git fetch origin` first; `HEAD` subject: `git log -1 --format=%s`), in this order:
@@ -96,21 +106,21 @@ gh api repos/dinhanhthi/SimpleMapper/pages --jq .build_type
   (other commits may sit on top of an interrupted `scripts/ship.sh`). It never blocks a normal next
   release: before Step B4 bumps, `project.yml` still holds the last shipped version, whose appcast
   entry exists, so that case goes to (d). List the release assets:
-  `gh release view vX.Y.Z --repo dinhanhthi/SimpleMapper --json assets --jq '.assets[].name'`.
+  `gh release view vX.Y.Z --repo Coprimal/SimpleMapper --json assets --jq '.assets[].name'`.
   - Release missing (the command fails) → if `release/export/SimpleMapper-X.Y.Z.zip` exists, write
     the notes file from the `## [X.Y.Z]` section of `CHANGELOG.md`:
     `awk '/^## \[X\.Y\.Z\]/{f=1;next} f&&/^## /{exit} f' CHANGELOG.md > release/export/SimpleMapper-X.Y.Z.md`,
-    then `gh release create vX.Y.Z release/export/SimpleMapper-X.Y.Z.zip --repo dinhanhthi/SimpleMapper --title "SimpleMapper X.Y.Z" --notes-file release/export/SimpleMapper-X.Y.Z.md`
+    then `gh release create vX.Y.Z release/export/SimpleMapper-X.Y.Z.zip --repo Coprimal/SimpleMapper --title "SimpleMapper X.Y.Z" --notes-file release/export/SimpleMapper-X.Y.Z.md`
     and, if `release/export/SimpleMapper-X.Y.Z.dmg` exists,
-    `gh release upload vX.Y.Z release/export/SimpleMapper-X.Y.Z.dmg --repo dinhanhthi/SimpleMapper`.
+    `gh release upload vX.Y.Z release/export/SimpleMapper-X.Y.Z.dmg --repo Coprimal/SimpleMapper`.
   - Release exists but `SimpleMapper-X.Y.Z.zip` or `SimpleMapper-X.Y.Z.dmg` is missing →
-    `gh release upload vX.Y.Z release/export/<missing file> --repo dinhanhthi/SimpleMapper`.
+    `gh release upload vX.Y.Z release/export/<missing file> --repo Coprimal/SimpleMapper`.
   - A local file needed above is missing → STOP: "The notarized build of vX.Y.Z is gone.
     Delete the tag and run /cf-ship again."
   - Then ALWAYS fetch the published zip so the appcast signs the bytes on GitHub:
-    `gh release download vX.Y.Z --repo dinhanhthi/SimpleMapper --pattern 'SimpleMapper-X.Y.Z.zip' --dir release/export --clobber`.
-  - Then run `scripts/publish-appcast.sh release/export/SimpleMapper-X.Y.Z.zip`, print the
-    summary (Step A2) and stop.
+    `gh release download vX.Y.Z --repo Coprimal/SimpleMapper --pattern 'SimpleMapper-X.Y.Z.zip' --dir release/export --clobber`.
+  - Then run `scripts/publish-appcast.sh release/export/SimpleMapper-X.Y.Z.zip`, check both
+    feeds (Step A1b), print the summary (Step A2) and stop.
 - **(d)** Otherwise (no tag for `X.Y.Z` on origin and `HEAD` is not its release commit, or the
   tag exists and the appcast already has it) → normal flow from Step B1.
 
@@ -245,17 +255,38 @@ It refuses a dirty tree of tracked files or an existing tag `vX.Y.Z` (use Resume
    notarize + staple → zip + DMG in `release/export/`.
 2. `publish-release.sh --yes` — tag `vX.Y.Z` + GitHub Release with the zip and DMG.
 3. `publish-appcast.sh` — `generate_appcast --account SimpleMapper`, commits
-   `chore(release): appcast vX.Y.Z` and pushes `appcast.xml` (Pages deploys it in ~1 min).
+   `chore(release): appcast vX.Y.Z`, pushes `appcast.xml` (`pages.yml` deploys it in ~1 min),
+   then runs `scripts/sync-feed-mirror.sh appcast.xml` (old-feed mirror).
 
 If Keychain prompts appear (codesign, notarytool, generate_appcast), the user clicks **Always Allow**.
+
+### Step A1b: Check both feeds
+
+Wait for the `pages.yml` run of the appcast commit, then check both feeds. A failed run or a
+missing item is a stop.
+
+```bash
+RUN=""
+for _ in $(seq 1 12); do
+  RUN=$(gh run list -R Coprimal/SimpleMapper --workflow pages.yml --commit "$(git rev-parse HEAD)" --json databaseId --jq '.[0].databaseId // empty' || true)
+  [ -n "$RUN" ] && break
+  sleep 10
+done
+[ -n "$RUN" ] || { echo "no pages.yml run for $(git rev-parse --short HEAD) after 2 minutes"; exit 1; }
+gh run watch "$RUN" -R Coprimal/SimpleMapper --exit-status
+curl -fsSL https://simplemapper.coprimal.dev/appcast.xml | grep -F '/vX.Y.Z/'
+curl -fsSL https://dinhanhthi.github.io/SimpleMapper/appcast.xml | grep -F '/vX.Y.Z/'
+```
+
+The mirror is GitHub Pages too: allow it up to 10 minutes (retry the last line) before stopping.
 
 ### Step A2: Print summary
 
 ```
 Shipped (local flow):
   SimpleMapper vX.Y.Z — notarized zip + dmg on the GitHub Release
-  GitHub Release: https://github.com/dinhanhthi/SimpleMapper/releases/tag/vX.Y.Z
-  Appcast: https://dinhanhthi.github.io/SimpleMapper/appcast.xml
+  GitHub Release: https://github.com/Coprimal/SimpleMapper/releases/tag/vX.Y.Z
+  Appcast: https://simplemapper.coprimal.dev/appcast.xml (mirror for builds <= 1.1.4: https://dinhanhthi.github.io/SimpleMapper/appcast.xml)
 ```
 
 ---

@@ -4,7 +4,7 @@
 <dict>
 	<!-- Partial Info.plist: merged with the generated one (GENERATE_INFOPLIST_FILE=YES). Sparkle keys only. -->
 	<key>SUFeedURL</key>
-	<string>https://dinhanhthi.github.io/SimpleMapper/appcast.xml</string>
+	<string>https://simplemapper.coprimal.dev/appcast.xml</string>
 	<key>SUPublicEDKey</key>
 	<string>MA53mxKYqJjAEgkXRS138H6tp/kcuINgRSSmHssM60U=</string>
 	<key>SUEnableAutomaticChecks</key>
