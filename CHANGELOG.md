@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.5] - 2026-11-18
+
 ### Changed
 
 - SimpleMapper moved to github.com/Coprimal/SimpleMapper, and updates now come from simplemapper.coprimal.dev. The About window shows Coprimal.
